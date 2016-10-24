@@ -1,0 +1,58 @@
+red2gmx is a (somewhat hackish) little program that
+reads a PDB which has been protonated/corrected with the Reduce program
+(http://kinemage.biochem.duke.edu/software/reduce.php). It removes repeated 
+atoms (keeping the one labeled "A", which should have the highest occupancy)
+and outputs a serie of numbers that can be used by the Gromacs program
+pdb2gmx in order to create a Gromacs topology that has the protonation states
+assigned by Reduce for residues ASP, GLU, LYS, ARG and HIS. 
+red2gmx will also output a PDB without the hydrogens, that can be
+used as an input for pdb2gmx.
+
+Use:
+
+./red2gmx  1 1 file.pdb
+
+The first two numbers correspond to the first two questions that pdb2gmx will ask:
+The wanted forcefield and the water model. Please do a test run of pdb2gmx on your
+system so you know what number corresponds to what model.
+
+red2gmx will output several things, including a column of numbers. Copy that column
+and paste it in a file which we will call "gmx_input.dat". Note that red2gmx has
+produced a file called file_cleanNoH.pdb (where file is the name of your file).
+Now call pdb2gmx in the following way:
+
+
+gmx pdb2gmx  -his -asp -glu -lys -arg  -f file_cleanNoH.pdb -o file.gro < gmx_input.dat
+
+After this, you should have a correct Gromacs topology that has protonation states
+that match those determined we Reduce. You can check that comparing the resulting structure
+with the red2gmx output, which also shows in human-readable form the state of each 
+residue.
+
+red2gmx uses the goChem library (github.com/rmera/gochem), and the devel branch of
+goChem is currently needed to build red2gmx. If you use it, please cite goChem,
+as well as Reduce.
+
+Disclaimer: The developer has no relation to the development of either Gromacs or
+Reduce.
+
+
+LICENSE
+
+Copyright 2016 Raul Mera A. <raul.mera@usach.cl> 
+
+
+These programs, including their documentation, 
+is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as 
+published by the Free Software Foundation; either version 2.1 of the 
+License, or (at your option) any later version.
+	  
+These programs and their documentation are distributed in the hope that 
+it will be useful, but WITHOUT ANY WARRANTY; without even the 
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+PURPOSE.  See the GNU General Public License for more details.
+	  		    
+You should have received a copy of the GNU Lesser General 
+Public License along with these program.  If not, see 
+<http://www.gnu.org/licenses/>. 
