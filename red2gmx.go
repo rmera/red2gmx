@@ -2,20 +2,20 @@ package main
 
 import (
 	"fmt"
-	"github.com/rmera/gochem"
+	"log"
 	"os"
 	"strings"
-)
 
+	chem "github.com/rmera/gochem"
+)
 
 /*This program takes a PDB protonated with the Reduce program. It fixes duplicated atoms by leaving only
 the copy labeled "A" in the crystallographic structure (assumed to be the one with the highest occupancy)
 and records the protonation state of each ASP, GLU, LYS, ARG and HIS residue. These protonation states are
-then printed as a string of "\n"-separated numbers, so taht string can be fed into the gromacs program 
+then printed as a string of "\n"-separated numbers, so taht string can be fed into the gromacs program
 gmx pdb2gmx ran with the options -his -arg -lys -asp -glu to ensure that the resulting file has the same protonation
 states as those obtained with Reduce. The program will also output a PDB without the hydrogens, which can be
 used as an input for gmx pdb2gmx*/
-
 
 //If there are four atoms with names containing "HH", the ARG is considered protonated
 func Arg(mol *chem.Molecule, resi, i int) (newi, protonated int) {
@@ -63,7 +63,7 @@ func Lys(mol *chem.Molecule, resi, i int) (newi, protonated int) {
 func GluAsp(mol *chem.Molecule, resi, i int) (newi, protonated int) {
 	protonated = 0
 	comp := "HD" //The string to compare to the atoms name, "HD" if ASP, HE if GLU. I am not 100% sure that these names are correct.
-	if mol.Atom(i).Molname == "GLU" {
+	if mol.Atom(i).MolName == "GLU" {
 		comp = "HE"
 	}
 	for newi = i; newi < mol.Len(); newi++ {
@@ -105,13 +105,12 @@ func His(mol *chem.Molecule, resi, i int) (newi, protonated int) {
 	} else if HD1 {
 		protonated = 0
 	} else {
-		panic("Abnormal histidine! perhaps Heme-coupled or as Imidazolate (SOD1)?")
+		log.Printf("abnormal histidine %d! perhaps Heme-coupled or as Imidazolate (SOD1)?", resi)
 	}
 	newi--
 	return
 
 }
-
 
 func main() {
 	mol, err := chem.PDBFileRead(os.Args[3], false)
@@ -155,7 +154,7 @@ func main() {
 		curres := at.MolID
 		prevres = at.MolID
 		prot := 0
-		switch at.Molname {
+		switch at.MolName {
 		case "HIS":
 			Protonator = His
 			ResidueList = &his
@@ -181,16 +180,16 @@ func main() {
 		}
 		i, prot = Protonator(mol, curres, i)
 		fmt.Println([2]int{i, prot})
-		*ResidueList = append(*ResidueList, [2]int{i, prot}) 	
+		*ResidueList = append(*ResidueList, [2]int{i, prot})
 	}
 	for _, chain := range Chains {
-		for _, v := range [][][2]int{lys, arg, asp, glu, his} {  //This residue order is the one Gromacs uses
+		for _, v := range [][][2]int{lys, arg, asp, glu, his} { //This residue order is the one Gromacs uses
 			for _, v2 := range v {
 				at := mol.Atom(v2[0])
 				if at.Chain != chain {
 					continue
 				}
-				fmt.Fprintf(os.Stderr, "Residue: %s %d, of Chain %s, assigned gmx protonation code %d\n", at.Molname, at.MolID, at.Chain, v2[1])
+				fmt.Fprintf(os.Stderr, "Residue: %s %d, of Chain %s, assigned gmx protonation code %d\n", at.MolName, at.MolID, at.Chain, v2[1])
 				gmx = fmt.Sprintf("%s%d\n", gmx, v2[1])
 			}
 		}
